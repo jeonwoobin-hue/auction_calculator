@@ -1,0 +1,229 @@
+
+<style>
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem;}
+.phase-btn{background:transparent;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:6px 16px;font-size:13px;cursor:pointer;color:var(--color-text-secondary);transition:all .2s;}
+.phase-btn.active{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info);}
+.stage-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;margin-top:4px;}
+.arrow-down{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid var(--color-border-secondary);margin:2px auto;}
+.impact-bar-bg{background:var(--color-background-secondary);border-radius:4px;height:10px;overflow:hidden;flex:1;}
+.impact-bar{height:100%;border-radius:4px;transition:width .6s ease;}
+</style>
+
+<div style="padding:1rem 0 0;">
+
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center;">
+  <span style="font-size:13px;color:var(--color-text-secondary);margin-right:4px;">단계 선택:</span>
+  <button class="phase-btn active" onclick="showPhase(0,this)">1단계 — 근접</button>
+  <button class="phase-btn" onclick="showPhase(1,this)">2단계 — 역전</button>
+  <button class="phase-btn" onclick="showPhase(2,this)">3단계 — 연쇄</button>
+  <button class="phase-btn" onclick="showPhase(3,this)">4단계 — 글로벌</button>
+</div>
+
+<div class="card" id="phase-card">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+    <div>
+      <div id="phase-title" style="font-size:15px;font-weight:500;color:var(--color-text-primary);"></div>
+      <div id="phase-subtitle" style="font-size:12px;color:var(--color-text-secondary);margin-top:3px;"></div>
+    </div>
+    <div id="phase-badge" style="font-size:11px;font-weight:500;padding:3px 10px;border-radius:4px;"></div>
+  </div>
+  <div id="phase-body"></div>
+</div>
+
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:1rem;">
+  <div class="card" style="margin-bottom:0;">
+    <div style="font-size:13px;font-weight:500;color:var(--color-text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em;">금리 역전 시뮬레이터</div>
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;">
+        <span>일본 30년 수익률</span><span id="jgb-val" style="font-weight:500;color:var(--color-text-primary);">3.14%</span>
+      </div>
+      <input type="range" min="1.5" max="5.5" step="0.01" value="3.14" id="jgb-slider" oninput="updateSim()" style="width:100%;">
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-bottom:4px;">
+        <span>미국 30년 수익률</span><span id="us-val" style="font-weight:500;color:var(--color-text-primary);">4.61%</span>
+      </div>
+      <input type="range" min="2.0" max="6.0" step="0.01" value="4.61" id="us-slider" oninput="updateSim()" style="width:100%;">
+    </div>
+    <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:12px;color:var(--color-text-secondary);">스프레드</span>
+        <span id="spread-val" style="font-size:14px;font-weight:500;"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:12px;color:var(--color-text-secondary);">현재 국면</span>
+        <span id="sim-phase" style="font-size:12px;font-weight:500;padding:2px 8px;border-radius:4px;"></span>
+      </div>
+      <div style="font-size:12px;color:var(--color-text-secondary);border-top:0.5px solid var(--color-border-tertiary);padding-top:8px;margin-top:4px;" id="sim-desc"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:0;">
+    <div style="font-size:13px;font-weight:500;color:var(--color-text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em;">자산별 예상 영향</div>
+    <div id="impact-bars"></div>
+    <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:8px;" id="impact-note"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div style="font-size:13px;font-weight:500;color:var(--color-text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em;">글로벌 자금 흐름 지도</div>
+  <div style="position:relative;height:220px;"><canvas id="flowChart"></canvas></div>
+  <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--color-text-secondary);">
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:20px;height:2px;background:#D85A30;display:inline-block;"></span>역전 전</span>
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:20px;height:2px;background:#378ADD;display:inline-block;border-style:dashed;border-top:2px dashed #378ADD;height:0;"></span>역전 후 예상</span>
+  </div>
+</div>
+
+<div style="text-align:center;padding-bottom:0.5rem;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+  <button class="phase-btn" onclick="sendPrompt('일본이 미국 국채를 매도하면 미국 경제에 어떤 영향을 미치나?')">미국 국채 매도 영향 분석 ↗</button>
+  <button class="phase-btn" onclick="sendPrompt('금리 역전 시 엔 캐리 트레이드 청산은 어떻게 일어나나?')">엔 캐리 트레이드 청산 ↗</button>
+  <button class="phase-btn" onclick="sendPrompt('금과 비트코인이 이 상황에서 안전자산 역할을 할 수 있나?')">금·BTC 안전자산 분석 ↗</button>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const isDark = matchMedia('(prefers-color-scheme:dark)').matches;
+const gridColor = isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.06)';
+const tickColor = isDark?'#888780':'#73726c';
+
+const phases = [
+  {
+    title:'1단계 — 수익률 근접 (스프레드 1%p 이하)',
+    subtitle:'현재 진행 중 · 스프레드 1.47%p → 1.0%p 미만 접근',
+    badge:'진행 중',badgeBg:'var(--color-background-warning)',badgeColor:'var(--color-text-warning)',
+    steps:[
+      {color:'#EF9F27',text:'일본 국내 인플레이션 지속 → BOJ 추가 금리 인상 압박'},
+      {color:'#EF9F27',text:'일본 30년물 수익률 3.5% 이상 상승 시도'},
+      {color:'#EF9F27',text:'일본 기관투자자(생보사·연기금) "귀국본능" 발동 시작'},
+      {color:'#EF9F27',text:'해외 자산 일부 환매 → 엔화 수요 증가 → 엔화 소폭 강세'},
+    ],
+    summary:'아직 위기는 아니지만, 30년간 유지된 미·일 금리차 구조가 좁혀지는 역사적 전환점. 일본 기관들의 포트폴리오 재조정이 조용히 시작된다.'
+  },
+  {
+    title:'2단계 — 수익률 역전 (일본 > 미국)',
+    subtitle:'임계 돌파 · 글로벌 자금 재배치의 실질적 트리거',
+    badge:'위험 신호',badgeBg:'var(--color-background-danger)',badgeColor:'var(--color-text-danger)',
+    steps:[
+      {color:'#D85A30',text:'일본 30년물 > 미국 30년물 — 1999년 이후 사상 첫 역전'},
+      {color:'#D85A30',text:'일본은 미국 국채 1조 달러+ 보유 → 대규모 매도 인센티브 발생'},
+      {color:'#D85A30',text:'엔 캐리 트레이드 청산 — 저금리 엔화 빌려 고수익 자산 투자하던 포지션 일시 청산'},
+      {color:'#D85A30',text:'엔화 급격한 강세 전환 (예: 달러당 130엔대 진입 가능)'},
+    ],
+    summary:'역전 그 자체보다 역전에 대한 "기대"가 더 빠르게 시장을 움직인다. 헤지펀드들이 먼저 포지션을 취하고, 실제 기관 자금 이동이 뒤따른다.'
+  },
+  {
+    title:'3단계 — 일본 국내 연쇄 반응',
+    subtitle:'트리플 약세 OR 자본 회귀 — 두 갈래 경로',
+    badge:'분기점',badgeBg:'var(--color-background-info)',badgeColor:'var(--color-text-info)',
+    steps:[
+      {color:'#378ADD',text:'[경로 A] 자본 회귀: 해외 자금 귀환 → 일본 국채 수요↑ → 수익률 안정 → 연착륙'},
+      {color:'#D85A30',text:'[경로 B] 재정위기: 금리 급등 → 이자 부담 폭증(GDP 대비 부채 2.4배) → BOJ 재개입(돈 찍기)'},
+      {color:'#D85A30',text:'[경로 B] BOJ 재매입 → 엔화 신뢰 붕괴 → 국채·엔화·주가 트리플 약세'},
+      {color:'#D85A30',text:'[경로 B] 일본판 "환율·채권 동반 폭락" — 신흥국 위기와 유사한 구조'},
+    ],
+    summary:'경로 A는 "건강한 정상화", 경로 B는 "부채의 덫". 어느 경로로 갈지는 BOJ의 정책 대응 속도와 일본 재정 여력에 달려 있다.'
+  },
+  {
+    title:'4단계 — 글로벌 연쇄 충격',
+    subtitle:'일본 위기가 세계로 전파되는 경로',
+    badge:'최악 시나리오',badgeBg:'var(--color-background-danger)',badgeColor:'var(--color-text-danger)',
+    steps:[
+      {color:'#993C1D',text:'일본, 미국 국채 대량 매도 → 미국 10·30년물 금리 급등'},
+      {color:'#993C1D',text:'미국 국채 금리↑ → 미국 모기지·회사채 금리 연쇄 상승 → 미국 경기 둔화'},
+      {color:'#993C1D',text:'달러 약세 + 엔화 변동성 폭증 → 신흥국 통화·채권 불안'},
+      {color:'#993C1D',text:'글로벌 위험자산 전반 조정 → 금·실물자산 급등 (안전자산 대피)'},
+    ],
+    summary:'크루그먼이 경고한 "불황의 경제학"이 2.0 버전으로 재연되는 시나리오. 진원지가 미국이 아닌 일본이라는 점이 다르지만, 글로벌 채권시장 교란이라는 본질은 같다.'
+  }
+];
+
+function showPhase(i, btn){
+  document.querySelectorAll('.phase-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const p = phases[i];
+  document.getElementById('phase-title').textContent = p.title;
+  document.getElementById('phase-subtitle').textContent = p.subtitle;
+  const badge = document.getElementById('phase-badge');
+  badge.textContent = p.badge;
+  badge.style.background = p.badgeBg;
+  badge.style.color = p.badgeColor;
+  document.getElementById('phase-body').innerHTML =
+    p.steps.map(s=>`
+      <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-start;">
+        <div class="stage-dot" style="background:${s.color};"></div>
+        <div style="font-size:13px;color:var(--color-text-primary);line-height:1.5;">${s.text}</div>
+      </div>
+    `).join('') +
+    `<div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-top:8px;">
+      <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6;">${p.summary}</div>
+    </div>`;
+}
+showPhase(0, document.querySelector('.phase-btn'));
+
+const assets = [
+  {name:'금',before:50,after:85,color:'#EF9F27'},
+  {name:'엔화',before:40,after:75,color:'#1D9E75'},
+  {name:'미국 국채',before:70,after:25,color:'#378ADD'},
+  {name:'일본 주식',before:60,after:20,color:'#D85A30'},
+  {name:'비트코인',before:45,after:72,color:'#7F77DD'},
+  {name:'원자재',before:50,after:70,color:'#5DCAA5'},
+];
+
+function renderImpact(jgb, us){
+  const spread = us - jgb;
+  let ratio = Math.max(0, Math.min(1, (1.5 - spread) / 1.5));
+  const bars = assets.map(a=>{
+    const v = Math.round(a.before + (a.after - a.before) * ratio);
+    const color = v >= 60 ? '#1D9E75' : v >= 40 ? '#EF9F27' : '#D85A30';
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="font-size:12px;color:var(--color-text-secondary);width:56px;flex-shrink:0;">${a.name}</span>
+      <div class="impact-bar-bg"><div class="impact-bar" style="width:${v}%;background:${color};"></div></div>
+      <span style="font-size:12px;font-weight:500;color:var(--color-text-primary);width:32px;text-align:right;">${v}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('impact-bars').innerHTML = bars;
+  document.getElementById('impact-note').textContent = spread <= 0 ? '역전 상태 — 글로벌 자금 대규모 재배치 진행 중' : spread < 0.5 ? '임계 근접 — 자금 이동 시작 신호' : '스프레드 충분 — 현상 유지 국면';
+}
+
+function updateSim(){
+  const jgb = parseFloat(document.getElementById('jgb-slider').value);
+  const us = parseFloat(document.getElementById('us-slider').value);
+  document.getElementById('jgb-val').textContent = jgb.toFixed(2)+'%';
+  document.getElementById('us-val').textContent = us.toFixed(2)+'%';
+  const spread = us - jgb;
+  document.getElementById('spread-val').textContent = (spread >= 0 ? '+' : '') + spread.toFixed(2) + '%p';
+  document.getElementById('spread-val').style.color = spread < 0 ? 'var(--color-text-danger)' : spread < 0.5 ? 'var(--color-text-warning)' : 'var(--color-text-success)';
+  let phase, phaseBg, phaseColor, desc;
+  if(spread > 1.5){ phase='안전 구간'; phaseBg='var(--color-background-success)'; phaseColor='var(--color-text-success)'; desc='현재 수준. 글로벌 자금 흐름 변화 미미. 기존 구조 유지.'; }
+  else if(spread > 0.5){ phase='경계 구간'; phaseBg='var(--color-background-warning)'; phaseColor='var(--color-text-warning)'; desc='일본 기관 포트폴리오 재조정 시작. 엔 캐리 일부 청산 가능.'; }
+  else if(spread > 0){ phase='위험 임박'; phaseBg='var(--color-background-danger)'; phaseColor='var(--color-text-danger)'; desc='역전 직전. 헤지펀드 포지션 선취매. 시장 변동성 급증 구간.'; }
+  else { phase='역전 발생!'; phaseBg='var(--color-background-danger)'; phaseColor='var(--color-text-danger)'; desc='사상 첫 역전. 일본 자금 미국 국채 매도 → 글로벌 채권시장 충격 시작.'; }
+  const sp = document.getElementById('sim-phase');
+  sp.textContent = phase; sp.style.background = phaseBg; sp.style.color = phaseColor;
+  document.getElementById('sim-desc').textContent = desc;
+  renderImpact(jgb, us);
+}
+updateSim();
+
+const flowLabels = ['2020','2021','2022','2023','2024','2025','2026(예상)'];
+new Chart(document.getElementById('flowChart'),{
+  type:'line',
+  data:{
+    labels:flowLabels,
+    datasets:[
+      {label:'역전 전 (일본→해외)',data:[85,90,95,88,82,75,30],borderColor:'#D85A30',tension:0.4,pointRadius:3,borderWidth:2,fill:false,borderDash:[]},
+      {label:'역전 후 예상 (귀국)',data:[null,null,null,null,null,75,130],borderColor:'#378ADD',tension:0.4,pointRadius:3,borderWidth:2,fill:false,borderDash:[5,4]}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y+'조엔'}}},
+    scales:{
+      x:{ticks:{color:tickColor,font:{size:11}},grid:{color:gridColor}},
+      y:{ticks:{color:tickColor,font:{size:11},callback:v=>v+'조엔'},grid:{color:gridColor},title:{display:true,text:'일본 기관 해외자산 투자 흐름',color:tickColor,font:{size:11}}}
+    }
+  }
+});
+</script>
