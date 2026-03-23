@@ -444,6 +444,127 @@
   .toggle input:checked + .slider::before { transform: translateX(18px); background: var(--accent); }
 
   .section-full { grid-column: 1 / -1; }
+
+  /* ===== SAVED LIST ===== */
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 9px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    background: var(--surface2);
+    color: var(--text);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .saved-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .saved-empty .icon { font-size: 36px; margin-bottom: 12px; }
+  .saved-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .saved-item:hover { border-color: var(--accent); background: var(--surface2); }
+  .saved-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .saved-item-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+  .saved-item-meta {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .saved-item-roi {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    text-align: right;
+  }
+  .saved-item-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .saved-stat {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .saved-stat span {
+    font-family: 'DM Mono', monospace;
+    color: var(--text);
+    font-size: 12px;
+  }
+  .saved-item-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .btn-sm {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-sm:hover { color: var(--text); border-color: var(--muted); }
+  .btn-sm.danger:hover { color: var(--danger); border-color: var(--danger); }
+  .save-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--accent2);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 30px;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .save-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
@@ -454,8 +575,37 @@
     <p class="subtitle">낙찰가부터 매도까지 — 실수익을 한눈에</p>
   </header>
 
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTab('calc')">📊 계산하기</button>
+    <button class="tab-btn" onclick="showTab('list')">🗂 저장된 매물 <span id="saved-count-badge"></span></button>
+  </div>
+
+  <div id="tab-calc">
   <!-- Input Section -->
   <div id="input-section">
+    <!-- 매물 정보 -->
+    <div class="card stagger-1" style="margin-bottom:16px;">
+      <div class="card-title"><span class="dot" style="background:#a855f7;box-shadow:0 0 6px #a855f7"></span> 매물 정보</div>
+      <div class="grid">
+        <div class="field">
+          <label>매물 이름 / 단지명</label>
+          <div class="input-wrap"><input type="text" id="property_name" placeholder="예) 강남구 래미안아파트 101동 1001호" style="font-family:'Noto Sans KR',sans-serif;font-size:13px;"></div>
+        </div>
+        <div class="field">
+          <label>경매 사건번호</label>
+          <div class="input-wrap"><input type="text" id="case_number" placeholder="예) 2024타경12345" style="font-family:'Noto Sans KR',sans-serif;font-size:13px;"></div>
+        </div>
+        <div class="field">
+          <label>담당자 / 메모</label>
+          <div class="input-wrap"><input type="text" id="owner_name" placeholder="예) 홍길동" style="font-family:'Noto Sans KR',sans-serif;font-size:13px;"></div>
+        </div>
+        <div class="field">
+          <label>경매 날짜</label>
+          <div class="input-wrap"><input type="text" id="auction_date" placeholder="예) 2025-06-15" style="font-family:'Noto Sans KR',sans-serif;font-size:13px;"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- 매입 정보 -->
     <div class="card stagger-1" style="margin-bottom:16px;">
       <div class="card-title"><span class="dot"></span> 매입 정보</div>
@@ -551,9 +701,9 @@
         <div class="card-title"><span class="dot" style="background:var(--accent2);box-shadow:0 0 6px var(--accent2)"></span> 임대 수익</div>
         <div class="toggle-row">
           <span class="toggle-label">월세 수익 포함</span>
-          <label class="toggle"><input type="checkbox" id="use_rent" checked onchange="toggleRent()"><span class="slider"></span></label>
+          <label class="toggle"><input type="checkbox" id="use_rent" onchange="toggleRent()"><span class="slider"></span></label>
         </div>
-        <div id="rent-fields">
+        <div id="rent-fields" style="display:none;">
           <div class="field">
             <label>월 임대료</label>
             <div class="input-wrap">
@@ -589,7 +739,7 @@
         <div class="field">
           <label>보유 기간</label>
           <div class="input-wrap">
-            <input type="number" id="hold_years" placeholder="3" value="3" step="0.5">
+            <input type="number" id="hold_years" placeholder="1" value="1" step="0.5">
             <span class="unit">년</span>
           </div>
         </div>
@@ -624,6 +774,26 @@
 
   <!-- Result Section -->
   <div id="result-panel">
+    <div id="property-info-bar" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 22px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
+      <div style="flex:1;min-width:180px;">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:4px;">매물</div>
+        <div id="r-property-name" style="font-size:15px;font-weight:700;color:var(--text);">—</div>
+      </div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:3px;">사건번호</div>
+          <div id="r-case-number" style="font-family:'DM Mono',monospace;font-size:13px;color:var(--highlight);">—</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:3px;">담당자</div>
+          <div id="r-owner-name" style="font-size:13px;color:var(--text);">—</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:3px;">경매일</div>
+          <div id="r-auction-date" style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text);">—</div>
+        </div>
+      </div>
+    </div>
     <div class="result-hero">
       <div class="roi-label">총 투자수익률 (ROI)</div>
       <div class="roi-value" id="roi-display">—</div>
@@ -685,6 +855,7 @@
 
     <div id="advice-box"></div>
 
+    <button class="btn btn-primary" onclick="saveCurrentResult()" style="background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 4px 20px rgba(16,185,129,0.3);margin-bottom:10px;">💾 이 매물 저장하기</button>
     <button class="btn btn-secondary" onclick="resetCalc()">↩ 다시 계산하기</button>
   </div>
 </div>
@@ -697,6 +868,15 @@
 
   function fmt(n) {
     if (Math.abs(n) >= 10000) return (n/10000).toFixed(1) + '억원';
+    return n.toLocaleString('ko-KR') + '만원';
+  }
+
+  function fmtMan(n) {
+    return n.toLocaleString('ko-KR') + '만원';
+  }
+
+  function fmtOk(n) {
+    if (Math.abs(n) >= 10000) return (n/10000).toFixed(2) + '억원';
     return n.toLocaleString('ko-KR') + '만원';
   }
 
@@ -760,6 +940,16 @@
     document.getElementById('input-section').style.display = 'none';
     document.getElementById('result-panel').style.display = 'block';
 
+    // 매물 정보
+    const propName   = document.getElementById('property_name').value || '(이름 없음)';
+    const caseNum    = document.getElementById('case_number').value   || '—';
+    const ownerName  = document.getElementById('owner_name').value    || '—';
+    const auctDate   = document.getElementById('auction_date').value  || '—';
+    document.getElementById('r-property-name').textContent = propName;
+    document.getElementById('r-case-number').textContent  = caseNum;
+    document.getElementById('r-owner-name').textContent   = ownerName;
+    document.getElementById('r-auction-date').textContent = auctDate;
+
     // Hero
     const roiEl = document.getElementById('roi-display');
     roiEl.textContent = fmtPct(roi);
@@ -768,27 +958,27 @@
 
     // Metrics
     document.getElementById('m-bid-ratio').textContent  = bidRatio ? bidRatio.toFixed(1) + '%' : '—';
-    document.getElementById('m-total-cost').textContent = fmt(totalBuy);
+    document.getElementById('m-total-cost').textContent = fmtOk(totalBuy);
     document.getElementById('m-roe').textContent        = ownCapital > 0 ? fmtPct(roe) : '—';
     document.getElementById('m-rental-yield').textContent = fmtPct(rentalYield);
     document.getElementById('m-capital-gain').textContent = fmt(gainPostTax);
     document.getElementById('m-annualized').textContent  = fmtPct(annualizedRoi);
 
     // Summary - 비용
-    document.getElementById('s-bid').textContent      = fmt(bidPrice);
+    document.getElementById('s-bid').textContent      = fmtMan(bidPrice);
     document.getElementById('s-deposit').textContent  = fmt(leaseDeposit);
     document.getElementById('s-acq-tax').textContent  = fmt(acqTax);
     document.getElementById('s-legal').textContent    = fmt(legalFee);
     document.getElementById('s-repair').textContent   = fmt(repairCost);
     document.getElementById('s-other').textContent    = fmt(otherCost);
-    document.getElementById('s-total-buy').textContent = fmt(totalBuy);
+    document.getElementById('s-total-buy').textContent = fmtMan(totalBuy);
 
     // Summary - 수익
     document.getElementById('s-rent-income').textContent = fmt(totalRentGross);
     document.getElementById('s-loan-interest').textContent = '-' + fmt(totalLoanInt);
     document.getElementById('s-expenses').textContent    = '-' + fmt(totalExpenses);
     document.getElementById('s-net-rent').textContent    = fmt(totalRentNet);
-    document.getElementById('s-sell').textContent        = fmt(sellPrice);
+    document.getElementById('s-sell').textContent        = fmtOk(sellPrice);
     document.getElementById('s-broker').textContent      = '-' + fmt(brokerFee);
     document.getElementById('s-gain-pre').textContent    = fmt(gainPreTax);
     document.getElementById('s-capital-tax').textContent = '-' + fmt(gainTax);
@@ -823,6 +1013,151 @@
     document.getElementById('input-section').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  // ===== TAB =====
+  function showTab(tab) {
+    document.getElementById('tab-calc').style.display = tab === 'calc' ? 'block' : 'none';
+    document.getElementById('tab-list').style.display = tab === 'list' ? 'block' : 'none';
+    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (tab==='calc'&&i===0)||(tab==='list'&&i===1)));
+    if (tab === 'list') renderList();
+  }
+
+  // ===== STORAGE =====
+  const STORAGE_KEY = 'auction_saved_v1';
+
+  function loadSaved() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch(e) { return []; }
+  }
+
+  function saveSaved(list) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    updateBadge();
+  }
+
+  function updateBadge() {
+    const n = loadSaved().length;
+    document.getElementById('saved-count-badge').textContent = n > 0 ? `(${n})` : '';
+  }
+
+  function saveCurrentResult() {
+    const list = loadSaved();
+    const record = {
+      id: Date.now(),
+      savedAt: new Date().toLocaleDateString('ko-KR'),
+      propertyName: document.getElementById('property_name').value || '(이름 없음)',
+      caseNumber:   document.getElementById('case_number').value   || '',
+      ownerName:    document.getElementById('owner_name').value    || '',
+      auctionDate:  document.getElementById('auction_date').value  || '',
+      // inputs
+      bid_price:            document.getElementById('bid_price').value,
+      appraisal:            document.getElementById('appraisal').value,
+      lease_deposit:        document.getElementById('lease_deposit').value,
+      own_capital:          document.getElementById('own_capital').value,
+      acquisition_tax_rate: document.getElementById('acquisition_tax_rate').value,
+      legal_fee:            document.getElementById('legal_fee').value,
+      repair_cost:          document.getElementById('repair_cost').value,
+      other_cost:           document.getElementById('other_cost').value,
+      loan_amount:          document.getElementById('loan_amount').value,
+      loan_rate:            document.getElementById('loan_rate').value,
+      use_rent:             document.getElementById('use_rent').checked,
+      monthly_rent:         document.getElementById('monthly_rent').value,
+      vacancy_rate:         document.getElementById('vacancy_rate').value,
+      annual_expense:       document.getElementById('annual_expense').value,
+      sell_price:           document.getElementById('sell_price').value,
+      hold_years:           document.getElementById('hold_years').value,
+      capital_gain_tax:     document.getElementById('capital_gain_tax').value,
+      broker_rate:          document.getElementById('broker_rate').value,
+      // results (display values)
+      roi:       document.getElementById('roi-display').textContent,
+      roiClass:  document.getElementById('roi-display').className,
+      totalBuy:  document.getElementById('m-total-cost').textContent,
+      netProfit: document.getElementById('s-net-profit').textContent,
+      bidRatio:  document.getElementById('m-bid-ratio').textContent,
+    };
+    list.unshift(record);
+    saveSaved(list);
+    showToast('💾 저장되었습니다!');
+  }
+
+  function deleteRecord(id) {
+    if (!confirm('이 매물을 삭제할까요?')) return;
+    const list = loadSaved().filter(r => r.id !== id);
+    saveSaved(list);
+    renderList();
+  }
+
+  function loadRecord(id) {
+    const rec = loadSaved().find(r => r.id === id);
+    if (!rec) return;
+    // fill inputs
+    const fields = ['bid_price','appraisal','lease_deposit','own_capital','acquisition_tax_rate',
+      'legal_fee','repair_cost','other_cost','loan_amount','loan_rate',
+      'monthly_rent','vacancy_rate','annual_expense','sell_price','hold_years','broker_rate'];
+    fields.forEach(f => { if (document.getElementById(f)) document.getElementById(f).value = rec[f] || ''; });
+    document.getElementById('property_name').value = rec.propertyName === '(이름 없음)' ? '' : rec.propertyName;
+    document.getElementById('case_number').value   = rec.caseNumber;
+    document.getElementById('owner_name').value    = rec.ownerName;
+    document.getElementById('auction_date').value  = rec.auctionDate;
+    document.getElementById('capital_gain_tax').value = rec.capital_gain_tax;
+    document.getElementById('use_rent').checked    = rec.use_rent;
+    toggleRent();
+    showTab('calc');
+    document.getElementById('result-panel').style.display = 'none';
+    document.getElementById('input-section').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('📂 불러왔습니다. 수정 후 다시 계산하세요.');
+  }
+
+  function renderList() {
+    const list = loadSaved();
+    const el = document.getElementById('saved-list-container');
+    if (list.length === 0) {
+      el.innerHTML = '<div class="saved-empty"><div class="icon">🗂</div>아직 저장된 매물이 없습니다.<br>계산 후 "저장하기" 버튼을 눌러보세요.</div>';
+      return;
+    }
+    el.innerHTML = list.map(r => {
+      const roiColor = r.roiClass && r.roiClass.includes('positive') ? 'var(--accent2)' : r.roiClass && r.roiClass.includes('negative') ? 'var(--danger)' : 'var(--warn)';
+      return `<div class="saved-item">
+        <div class="saved-item-header">
+          <div>
+            <div class="saved-item-name">${r.propertyName}</div>
+            <div class="saved-item-meta">${r.caseNumber ? r.caseNumber + ' · ' : ''}${r.auctionDate || ''} ${r.ownerName ? '· ' + r.ownerName : ''} · 저장일 ${r.savedAt}</div>
+          </div>
+          <div class="saved-item-roi" style="color:${roiColor}">${r.roi}</div>
+        </div>
+        <div class="saved-item-stats">
+          <div class="saved-stat">총 매입비용 <span>${r.totalBuy}</span></div>
+          <div class="saved-stat">순이익 <span>${r.netProfit}</span></div>
+          <div class="saved-stat">낙찰가율 <span>${r.bidRatio}</span></div>
+        </div>
+        <div class="saved-item-actions">
+          <button class="btn-sm" onclick="loadRecord(${r.id})">✏️ 불러와서 수정</button>
+          <button class="btn-sm danger" onclick="deleteRecord(${r.id})">🗑 삭제</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // init
+  updateBadge();
+
 </script>
+  </div><!-- /tab-calc -->
+
+  <!-- List Tab -->
+  <div id="tab-list" style="display:none;">
+    <div id="saved-list-container"></div>
+  </div>
+
+  <div id="toast" class="save-toast"></div>
+
 </body>
 </html>
